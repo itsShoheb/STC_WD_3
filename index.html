@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Tic-Tac-Toe | Future Edition</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: #00ff9d;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .game-container {
+            text-align: center;
+            position: relative;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
+            border: 2px solid #00ff9d;
+        }
+
+        .score-board {
+            display: flex;
+            justify-content: space-around;
+            margin: 1rem 0;
+            padding: 1rem;
+            background: rgba(0, 255, 157, 0.1);
+            border-radius: 10px;
+        }
+
+        .score-item {
+            font-size: 1.2rem;
+        }
+
+        .game-mode {
+            margin: 1rem 0;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            background: none;
+            border: 2px solid #00ff9d;
+            color: #00ff9d;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn.active {
+            background: #00ff9d;
+            color: #1a1a1a;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 2rem auto;
+            width: 400px;
+            height: 400px;
+        }
+
+        .cell {
+            background: rgba(0, 255, 157, 0.05);
+            border: 2px solid #00ff9d;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cell:hover {
+            background: rgba(0, 255, 157, 0.1);
+            transform: scale(1.05);
+        }
+
+        .cell.x {
+            color: #00ff9d;
+            text-shadow: 0 0 15px #00ff9d;
+        }
+
+        .cell.o {
+            color: #ff006e;
+            text-shadow: 0 0 15px #ff006e;
+        }
+
+        .winning-cell {
+            animation: glow 1s infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px #00ff9d;
+            }
+            to {
+                box-shadow: 0 0 20px #00ff9d;
+            }
+        }
+
+        .reset-btn {
+            background: #ff006e;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .reset-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #ff006e;
+        }
+
+        .game-status {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            height: 30px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #00ff9d;
+        }
+
+        @media (max-width: 480px) {
+            .game-board {
+                width: 300px;
+                height: 300px;
+            }
+            
+            .cell {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Audio elements for sound effects -->
+    <audio id="moveSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.mp3" preload="auto"></audio>
+    <audio id="winSound" src="https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3" preload="auto"></audio>
+    <audio id="drawSound" src="https://assets.mixkit.co/sfx/preview/mixkit-unlock-game-notification-253.mp3" preload="auto"></audio>
+    <audio id="buttonSound" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3" preload="auto"></audio>
+    <audio id="computerSound" src="https://assets.mixkit.co/sfx/preview/mixkit-robot-digital-alarm-389.mp3" preload="auto"></audio>
+
+    <div class="game-container">
+        <h1>NEON TIC-TAC-TOE</h1>
+        <div class="game-mode">
+            <button class="mode-btn active" id="vsHuman">VS Human</button>
+            <button class="mode-btn" id="vsComputer">VS Computer</button>
+        </div>
+        <div class="score-board">
+            <div class="score-item">
+                <i class="fas fa-user"></i> X: <span id="scoreX">0</span>
+            </div>
+            <div class="score-item">
+                <i class="fas fa-robot"></i> O: <span id="scoreO">0</span>
+            </div>
+        </div>
+        <div class="game-status" id="gameStatus"></div>
+        <div class="game-board" id="board"></div>
+        <button class="reset-btn" id="reset">New Game</button>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h2 id="modalText"></h2>
+            <button class="reset-btn" onclick="closeModal()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        // Sound effects
+        const moveSound = document.getElementById('moveSound');
+        const winSound = document.getElementById('winSound');
+        const drawSound = document.getElementById('drawSound');
+        const buttonSound = document.getElementById('buttonSound');
+        const computerSound = document.getElementById('computerSound');
+
+        // Game state variables
+        let currentPlayer = 'X';
+        let gameBoard = ['', '', '', '', '', '', '', '', ''];
+        let gameActive = true;
+        let vsComputer = false;
+        let scores = { X: 0, O: 0 };
+
+        // Play sound function with error handling
+        function playSound(sound) {
+            try {
+                sound.currentTime = 0;
+                sound.play();
+            } catch (e) {
+                console.log("Sound playback error:", e);
+            }
+        }
+
+        // Initialize game board
+        function initBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.setAttribute('data-index', i);
+                cell.addEventListener('click', () => {
+                    playSound(buttonSound);
+                    handleCellClick(i);
+                });
+                board.appendChild(cell);
+            }
+        }
+
+        // Handle cell click
+        function handleCellClick(index) {
+            if (!gameActive || gameBoard[index] !== '' || 
+                (vsComputer && currentPlayer === 'O')) return;
+
+            makeMove(index);
+
+            if (vsComputer && gameActive) {
+                setTimeout(() => {
+                    playSound(computerSound);
+                    computerMove();
+                }, 500);
+            }
+        }
+
+        // Computer move
+        function computerMove() {
+            const emptyCells = gameBoard
+                .map((cell, index) => cell === '' ? index : null)
+                .filter(cell => cell !== null);
+            
+            if (emptyCells.length > 0) {
+                const randomIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                makeMove(randomIndex);
+            }
+        }
+
+        // Make a move
+        function makeMove(index) {
+            gameBoard[index] = currentPlayer;
+            const cell = document.querySelector(`[data-index="${index}"]`);
+            cell.textContent = currentPlayer;
+            cell.classList.add(currentPlayer.toLowerCase());
+            
+            playSound(moveSound);
+
+            if (checkWin()) {
+                handleWin();
+            } else if (checkDraw()) {
+                handleDraw();
+            } else {
+                currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                updateStatus();
+            }
+        }
+
+        // Check win conditions
+        function checkWin() {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8], // Rows
+                [0, 3, 6], [1, 4, 7], [2, 5, 8], // Columns
+                [0, 4, 8], [2, 4, 6] // Diagonals
+            ];
+
+            return winPatterns.some(pattern => {
+                const [a, b, c] = pattern;
+                if (gameBoard[a] && gameBoard[a] === gameBoard[b] && gameBoard[a] === gameBoard[c]) {
+                    pattern.forEach(index => {
+                        document.querySelector(`[data-index="${index}"]`).classList.add('winning-cell');
+                    });
+                    return true;
+                }
+                return false;
+            });
+        }
+
+        // Check for draw
+        function checkDraw() {
+            return gameBoard.every(cell => cell !== '');
+        }
+
+        // Handle win
+        function handleWin() {
+            gameActive = false;
+            scores[currentPlayer]++;
+            updateScores();
+            playSound(winSound);
+            showModal(`${currentPlayer} Wins!`);
+        }
+
+        // Handle draw
+        function handleDraw() {
+            gameActive = false;
+            playSound(drawSound);
+            showModal("It's a Draw!");
+        }
+
+        // Reset game
+        function resetGame() {
+            gameBoard = ['', '', '', '', '', '', '', '', ''];
+            gameActive = true;
+            currentPlayer = 'X';
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.textContent = '';
+                cell.className = 'cell';
+            });
+            updateStatus();
+        }
+
+        // Update scores
+        function updateScores() {
+            document.getElementById('scoreX').textContent = scores.X;
+            document.getElementById('scoreO').textContent = scores.O;
+        }
+
+        // Update game status
+        function updateStatus() {
+            document.getElementById('gameStatus').textContent = 
+                `${currentPlayer}'s Turn`;
+        }
+
+        // Show modal
+        function showModal(text) {
+            document.getElementById('modal').style.display = 'flex';
+            document.getElementById('modalText').textContent = text;
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+            resetGame();
+        }
+
+        // Add sound to all buttons
+        document.querySelectorAll('button').forEach(button => {
+            button.addEventListener('click', () => playSound(buttonSound));
+        });
+
+        // Event Listeners
+        document.getElementById('reset').addEventListener('click', () => {
+            resetGame();
+            closeModal();
+        });
+
+        document.getElementById('vsHuman').addEventListener('click', function() {
+            vsComputer = false;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            resetGame();
+        });
+
+        document.getElementById('vsComputer').addEventListener('click', function() {
+            vsComputer = true;
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            resetGame();
+        });
+
+        // Initialize game
+        initBoard();
+        updateStatus();
+    </script>
+</body>
+</html>
